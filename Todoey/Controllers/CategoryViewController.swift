@@ -7,10 +7,10 @@
 //
 
 import UIKit
-import CoreData
 import RealmSwift
+import ChameleonFramework
 
-class CategoryViewController: UITableViewController {
+class CategoryViewController: SwipeTableViewController {
     var categories : Results<Category>!
     
 //    let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
@@ -19,7 +19,7 @@ class CategoryViewController: UITableViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-
+        tableView.separatorStyle = .none
         loadCategories()
     }
     
@@ -31,6 +31,7 @@ class CategoryViewController: UITableViewController {
             if !textField.text!.isEmpty {
                 let category = Category()
                 category.name = textField.text!
+                category.color = UIColor(randomFlatColorOf: .light)?.hexValue()
                 self.save(category: category)
             }
         }
@@ -51,8 +52,10 @@ class CategoryViewController: UITableViewController {
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "CategoryCell", for: indexPath)
+        let cell = super.tableView(tableView, cellForRowAt: indexPath)
         cell.textLabel?.text = categories?[indexPath.row].name ?? "No categories added yet"
+        cell.backgroundColor = UIColor(hexString: categories?[indexPath.row].color ?? "FFFFFF")
+        cell.textLabel?.textColor = UIColor(contrastingBlackOrWhiteColorOn: cell.backgroundColor!, isFlat: true)
         return cell 
     }
     
@@ -84,5 +87,21 @@ class CategoryViewController: UITableViewController {
         }
         tableView.reloadData()
     }
+    
+    override func updateModel(at indexPath: IndexPath) {
+        super.updateModel(at: indexPath)
+        if let category = self.categories?[indexPath.row] {
+            do {
+                try self.realm.write {
+                    self.realm.delete(category)
+
+                }
+            } catch {
+                print("Error deleting item, \(error)")
+            }
+
+        }
+    }
 
 }
+
